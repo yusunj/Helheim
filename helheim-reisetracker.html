@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Helheim — Reisetracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-void: #0a0e0f;
+    --bg-panel: #12191a;
+    --bg-panel-raised: #17201f;
+    --border-frost: #263231;
+    --ink-bone: #e7e2d3;
+    --ink-muted: #838f8d;
+    --phase-ruhig: #6fa3b0;
+    --phase-ruhig-dim: #3a4d52;
+    --phase-angespannt: #c98a3e;
+    --phase-angespannt-dim: #52443a;
+    --phase-kritisch: #9c3232;
+    --phase-kritisch-dim: #522a2a;
+    --accent-rune: #b7a66b;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background:
+      radial-gradient(ellipse at 50% -10%, #16201f 0%, var(--bg-void) 55%);
+    color: var(--ink-bone);
+    font-family: 'Work Sans', sans-serif;
+    padding: 32px 20px 60px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .sheet {
+    width: 100%;
+    max-width: 760px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+
+  header h1 {
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
+    font-size: 1.4rem;
+    letter-spacing: 0.04em;
+    color: var(--ink-bone);
+    margin: 0 0 4px;
+  }
+
+  header p {
+    color: var(--ink-muted);
+    font-size: 0.85rem;
+    margin: 0;
+  }
+
+  /* ---- Hero: Phase & Turn ---- */
+  .hero {
+    border-radius: 4px;
+    padding: 36px 24px;
+    text-align: center;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-frost);
+    position: relative;
+    overflow: hidden;
+    transition: box-shadow 0.4s ease, border-color 0.4s ease;
+  }
+
+  .hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    opacity: 0.5;
+    background: radial-gradient(ellipse at 50% 0%, var(--phase-color, var(--phase-ruhig)) 0%, transparent 70%);
+    transition: background 0.6s ease;
+    pointer-events: none;
+  }
+
+  .hero-turn {
+    font-family: 'Cinzel', serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.12em;
+    color: var(--ink-muted);
+    position: relative;
+  }
+
+  .hero-number {
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    font-size: 4.6rem;
+    line-height: 1;
+    margin: 6px 0 10px;
+    color: var(--ink-bone);
+    position: relative;
+  }
+
+  .hero-phase {
+    font-family: 'Cinzel', serif;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--phase-color, var(--phase-ruhig));
+    position: relative;
+    transition: color 0.6s ease;
+  }
+
+  .hero-phase-sub {
+    margin-top: 6px;
+    font-size: 0.85rem;
+    color: var(--ink-muted);
+    position: relative;
+  }
+
+  .hero-actions {
+    margin-top: 26px;
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    position: relative;
+  }
+
+  button {
+    font-family: 'Work Sans', sans-serif;
+    font-weight: 500;
+    font-size: 0.9rem;
+    padding: 12px 22px;
+    border-radius: 3px;
+    border: 1px solid var(--border-frost);
+    background: var(--bg-panel-raised);
+    color: var(--ink-bone);
+    cursor: pointer;
+    transition: border-color 0.2s ease, background 0.2s ease;
+  }
+
+  button:hover { border-color: var(--accent-rune); }
+  button:active { transform: translateY(1px); }
+  button:focus-visible { outline: 2px solid var(--accent-rune); outline-offset: 2px; }
+
+  .btn-primary {
+    background: var(--phase-color, var(--phase-ruhig));
+    border-color: transparent;
+    color: #0a0e0f;
+    font-weight: 600;
+  }
+
+  .btn-rest {
+    background: transparent;
+    border-color: var(--accent-rune);
+    color: var(--accent-rune);
+  }
+
+  /* ---- Grid panels ---- */
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 16px;
+  }
+
+  @media (max-width: 620px) {
+    .grid { grid-template-columns: 1fr; }
+    .hero-number { font-size: 3.6rem; }
+  }
+
+  .panel {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-frost);
+    border-radius: 3px;
+    padding: 18px 20px;
+  }
+
+  .panel h2 {
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: var(--ink-muted);
+    margin: 0 0 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-frost);
+  }
+
+  /* Reiseart */
+  .reiseart-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 9px 0;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+  }
+  .reiseart-option:last-child { border-bottom: none; }
+
+  .reiseart-option input { margin-top: 4px; accent-color: var(--accent-rune); }
+
+  .reiseart-option .label {
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+  .reiseart-option .desc {
+    font-size: 0.78rem;
+    color: var(--ink-muted);
+    margin-top: 2px;
+  }
+
+  /* Region */
+  .region-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    margin-bottom: 10px;
+  }
+
+  .region-row input[type="number"] {
+    width: 54px;
+    background: var(--bg-void);
+    border: 1px solid var(--border-frost);
+    color: var(--ink-bone);
+    border-radius: 3px;
+    padding: 4px 6px;
+    font-family: 'Work Sans', sans-serif;
+    text-align: center;
+  }
+
+  .progress-track {
+    height: 8px;
+    background: var(--bg-void);
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid var(--border-frost);
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--accent-rune);
+    width: 0%;
+    transition: width 0.3s ease;
+  }
+
+  .region-note {
+    margin-top: 10px;
+    font-size: 0.78rem;
+    color: var(--ink-muted);
+  }
+
+  .region-complete {
+    margin-top: 10px;
+    font-size: 0.8rem;
+    color: var(--accent-rune);
+    display: none;
+  }
+
+  /* Modifikatoren */
+  .mod-line {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+  }
+  .mod-line:last-child { border-bottom: none; }
+  .mod-line .val { color: var(--phase-color, var(--phase-ruhig)); font-weight: 600; }
+
+  .manifest-alert {
+    margin-top: 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--phase-kritisch);
+    background: rgba(156, 50, 50, 0.12);
+    border-radius: 3px;
+    font-size: 0.8rem;
+    color: #e0a3a3;
+    display: none;
+  }
+
+  /* Verschleiss */
+  .wear-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .wear-buttons button {
+    padding: 8px 4px;
+    font-size: 0.78rem;
+    text-align: center;
+  }
+
+  .wear-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .wear-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.82rem;
+    background: var(--bg-panel-raised);
+    border: 1px solid var(--border-frost);
+    border-radius: 3px;
+    padding: 6px 10px;
+  }
+
+  .wear-item button {
+    padding: 2px 8px;
+    font-size: 0.72rem;
+    border-color: var(--border-frost);
+    background: transparent;
+  }
+
+  .wear-empty {
+    font-size: 0.8rem;
+    color: var(--ink-muted);
+    font-style: italic;
+  }
+
+  /* Verlauf */
+  .log-panel { margin-top: 16px; }
+  .log-list {
+    max-height: 180px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 4px;
+  }
+  .log-entry {
+    font-size: 0.8rem;
+    color: var(--ink-muted);
+    display: flex;
+    gap: 10px;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+  }
+  .log-entry span.turn-no { color: var(--ink-bone); font-weight: 600; min-width: 46px; }
+  .log-entry span.phase-tag {
+    font-weight: 600;
+  }
+
+  footer {
+    text-align: center;
+    margin-top: 24px;
+    font-size: 0.75rem;
+    color: var(--ink-muted);
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <header>
+    <h1>Helheim — Reisetracker</h1>
+    <p>Stufe 11–16 · Gruppe 5–6 · Zeitphasen &amp; Reise</p>
+  </header>
+
+  <div class="hero" id="hero">
+    <div class="hero-turn">TURN SEIT LETZTEM LONG REST</div>
+    <div class="hero-number" id="turnNumber">0</div>
+    <div class="hero-phase" id="phaseName">Ruhig</div>
+    <div class="hero-phase-sub" id="phaseSub">Karte wie vorgesehen · 1 Karte ziehen</div>
+    <div class="hero-actions">
+      <button class="btn-primary" id="nextTurnBtn">Nächster Turn</button>
+      <button class="btn-rest" id="longRestBtn">Long Rest</button>
+    </div>
+  </div>
+
+  <div class="grid">
+
+    <div class="panel">
+      <h2>Reiseart</h2>
+      <label class="reiseart-option">
+        <input type="radio" name="reiseart" value="schnell">
+        <div>
+          <div class="label">Schnell</div>
+          <div class="desc">Hex wie gewohnt +1 · nur 0,5 Turn Zeitkosten · Karte 1 Stufe härter · Jäger eskaliert leichter</div>
+        </div>
+      </label>
+      <label class="reiseart-option">
+        <input type="radio" name="reiseart" value="vorsichtig" checked>
+        <div>
+          <div class="label">Vorsichtig</div>
+          <div class="desc">normale Bewegung · Vorteil auf Reaktion/Wahrnehmung</div>
+        </div>
+      </label>
+      <label class="reiseart-option">
+        <input type="radio" name="reiseart" value="versteckt">
+        <div>
+          <div class="label">Versteckt</div>
+          <div class="desc">normale Bewegung · Stealth-Check kann Combat-Karte abwenden</div>
+        </div>
+      </label>
+    </div>
+
+    <div class="panel">
+      <h2>Region</h2>
+      <div class="region-row">
+        <span>Größe (Hexes)</span>
+        <input type="number" id="regionSize" value="10" min="1">
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="regionFill"></div></div>
+      <div class="region-note" id="regionNote">0 / 10 Hexes durchquert</div>
+      <div class="region-complete" id="regionComplete">Region durchquert — neues Deck aufbauen.</div>
+    </div>
+
+    <div class="panel">
+      <h2>Aktuelle Modifikatoren</h2>
+      <div class="mod-line"><span>Alle DCs</span><span class="val" id="modDC">+0</span></div>
+      <div class="mod-line"><span>Combat &amp; Ambush CR</span><span class="val" id="modCR">6–9</span></div>
+      <div class="mod-line"><span>Kartenzug</span><span class="val" id="modDraw">1 Karte</span></div>
+      <div class="mod-line"><span>Stealth-DC (Versteckt)</span><span class="val" id="modStealth">18</span></div>
+      <div class="manifest-alert" id="manifestAlert">Kritisch-Phase: die nächste Combat-&amp;-Ambush-Jägerkarte manifestiert automatisch (CR 16–19).</div>
+    </div>
+
+    <div class="panel">
+      <h2>Verschleiß eintragen</h2>
+      <div class="wear-buttons">
+        <button data-wear="Erschöpfung">1 · Erschöpfung</button>
+        <button data-wear="Waffe stumpf (−1 Schaden)">2 · Waffe stumpf</button>
+        <button data-wear="Rüstung beschädigt (−1 AC)">3 · Rüstung besch.</button>
+        <button data-wear="Ressourcenverlust">4 · Ressourcen</button>
+        <button data-wear="Attributsmalus (−2)">5 · Attribut</button>
+        <button data-wear="Keine Folge">6 · Keine Folge</button>
+      </div>
+      <ul class="wear-list" id="wearList">
+        <li class="wear-empty">Noch keine offenen Verschleiß-Einträge.</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <div class="panel log-panel">
+    <h2>Verlauf</h2>
+    <div class="log-list" id="logList"></div>
+  </div>
+
+  <footer>
+    Stand wird lokal im Browser gespeichert (nicht in der Chat-Vorschau — erst nach dem Öffnen der heruntergeladenen Datei).
+    <br>
+    <button id="resetBtn" style="margin-top:10px; padding:6px 14px; font-size:0.75rem;">Fortschritt zurücksetzen</button>
+  </footer>
+
+</div>
+
+<script>
+  const state = {
+    turn: 0,
+    hex: 0,
+    regionSize: 10,
+    reiseart: 'vorsichtig',
+    wear: [],
+    log: []
+  };
+
+  const phaseInfo = {
+    ruhig: {
+      name: 'Ruhig', color: 'var(--phase-ruhig)',
+      sub: 'Karte wie vorgesehen · 1 Karte ziehen',
+      dc: '+0', cr: '6–9', draw: '1 Karte', stealth: '18',
+      manifest: false
+    },
+    angespannt: {
+      name: 'Angespanntes Zwielicht', color: 'var(--phase-angespannt)',
+      sub: 'Karte 1 Stufe härter · 1 Karte ziehen',
+      dc: '+2', cr: '9–13', draw: '1 Karte', stealth: '20',
+      manifest: false
+    },
+    kritisch: {
+      name: 'Kritische Stunde', color: 'var(--phase-kritisch)',
+      sub: '2 Karten ziehen, schlimmere zählt',
+      dc: '+5', cr: '13–17', draw: '2 Karten', stealth: '23',
+      manifest: true
+    }
+  };
+
+  function getPhaseKey(turn) {
+    if (turn >= 7) return 'kritisch';
+    if (turn >= 4) return 'angespannt';
+    return 'ruhig';
+  }
+
+  const STORAGE_KEY = 'helheim-tracker-state';
+
+  function saveState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) { /* localStorage nicht verfügbar, z. B. in Sandbox-Vorschau */ }
+  }
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const saved = JSON.parse(raw);
+        Object.assign(state, saved);
+      }
+    } catch (e) { /* localStorage nicht verfügbar, z. B. in Sandbox-Vorschau */ }
+  }
+
+  function syncInputs() {
+    document.getElementById('regionSize').value = state.regionSize;
+    document.querySelectorAll('input[name="reiseart"]').forEach(radio => {
+      radio.checked = radio.value === state.reiseart;
+    });
+  }
+
+  function movementFor(reiseart) {
+    return 1;
+  }
+
+  function turnIncrementFor(reiseart) {
+    return reiseart === 'schnell' ? 0.5 : 1;
+  }
+
+  function formatTurn(t) {
+    if (Number.isInteger(t)) return String(t);
+    const whole = Math.floor(t);
+    return (whole > 0 ? whole : '') + '½';
+  }
+
+  function render() {
+    const phaseKey = getPhaseKey(state.turn);
+    const info = phaseInfo[phaseKey];
+
+    document.getElementById('turnNumber').textContent = formatTurn(state.turn);
+    document.getElementById('phaseName').textContent = info.name;
+    document.getElementById('phaseSub').textContent = info.sub;
+    document.getElementById('hero').style.setProperty('--phase-color', info.color);
+
+    document.getElementById('modDC').textContent = info.dc;
+    document.getElementById('modCR').textContent = info.cr;
+    document.getElementById('modDraw').textContent = info.draw;
+    document.getElementById('modStealth').textContent = info.stealth;
+    document.getElementById('manifestAlert').style.display = info.manifest ? 'block' : 'none';
+
+    const size = state.regionSize;
+    const pct = Math.min(100, Math.round((state.hex / size) * 100));
+    document.getElementById('regionFill').style.width = pct + '%';
+    document.getElementById('regionNote').textContent = state.hex + ' / ' + size + ' Hexes durchquert';
+    document.getElementById('regionComplete').style.display = state.hex >= size ? 'block' : 'none';
+
+    const wearList = document.getElementById('wearList');
+    wearList.innerHTML = '';
+    if (state.wear.length === 0) {
+      const li = document.createElement('li');
+      li.className = 'wear-empty';
+      li.textContent = 'Noch keine offenen Verschleiß-Einträge.';
+      wearList.appendChild(li);
+    } else {
+      state.wear.forEach((entry, idx) => {
+        const li = document.createElement('li');
+        li.className = 'wear-item';
+        const span = document.createElement('span');
+        span.textContent = entry;
+        const btn = document.createElement('button');
+        btn.textContent = 'behoben';
+        btn.addEventListener('click', () => {
+          state.wear.splice(idx, 1);
+          render();
+        });
+        li.appendChild(span);
+        li.appendChild(btn);
+        wearList.appendChild(li);
+      });
+    }
+
+    const logList = document.getElementById('logList');
+    logList.innerHTML = '';
+    state.log.forEach(entry => {
+      const div = document.createElement('div');
+      div.className = 'log-entry';
+      div.innerHTML = '<span class="turn-no">Turn ' + formatTurn(entry.turn) + '</span>' +
+        '<span>' + entry.reiseart + '</span>' +
+        '<span class="phase-tag" style="color:' + entry.color + '">' + entry.phase + '</span>' +
+        '<span>Hex ' + entry.hex + '</span>';
+      logList.appendChild(div);
+    });
+
+    saveState();
+  }
+
+  document.querySelectorAll('input[name="reiseart"]').forEach(radio => {
+    radio.addEventListener('change', e => {
+      state.reiseart = e.target.value;
+    });
+  });
+
+  document.getElementById('regionSize').addEventListener('input', e => {
+    const val = parseInt(e.target.value, 10);
+    state.regionSize = isNaN(val) || val < 1 ? 1 : val;
+    render();
+  });
+
+  document.getElementById('nextTurnBtn').addEventListener('click', () => {
+    state.turn += turnIncrementFor(state.reiseart);
+    state.hex += movementFor(state.reiseart);
+    const phaseKey = getPhaseKey(state.turn);
+    const info = phaseInfo[phaseKey];
+    const reiseartLabel = { schnell: 'Schnell', vorsichtig: 'Vorsichtig', versteckt: 'Versteckt' }[state.reiseart];
+    state.log.push({ turn: state.turn, reiseart: reiseartLabel, phase: info.name, color: info.color, hex: state.hex });
+    render();
+  });
+
+  document.getElementById('longRestBtn').addEventListener('click', () => {
+    state.log.push({ turn: state.turn, reiseart: '—', phase: 'Long Rest · Deck gemischt', color: 'var(--accent-rune)', hex: state.hex });
+    state.turn = 0;
+    render();
+  });
+
+  document.querySelectorAll('.wear-buttons button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.dataset.wear !== 'Keine Folge') {
+        state.wear.push(btn.dataset.wear);
+      }
+      render();
+    });
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    if (!confirm('Gesamten Reisefortschritt (Turn, Hex, Verschleiß, Verlauf) zurücksetzen?')) return;
+    state.turn = 0;
+    state.hex = 0;
+    state.regionSize = 10;
+    state.reiseart = 'vorsichtig';
+    state.wear = [];
+    state.log = [];
+    syncInputs();
+    render();
+  });
+
+  loadState();
+  syncInputs();
+  render();
+</script>
+</body>
+</html>
